@@ -79,13 +79,13 @@ def move_selected_activities(activities):
     return selected_activities
 
 def print_activity_list(activities):
+    index = 1
     for activity in activities:
-        print activity.name
+        print "%d %s" % (index, activity.name)
 
 def select_moving_activity(activities):
     while True:
-        for index in xrange(len(activities)):
-            print '%d %s' % (index, activities[index].name)
+        print_activity_list(activities)
 
         result = raw_input("Select the number of the activity:")
 
@@ -105,15 +105,15 @@ def select_spot_activities(activities):
         elif result >= 0 or result < len(activities):
             index = int(result)
             activity = activities[index]  # this isn't
+            if not activity.is_selected:
+                activity.set_reps(raw_input("Enter the number of reps: "))
+                activity.set_sets(raw_input("Enter the number of sets: "))
             activity.toggle_selected()
-            activity.set_reps(raw_input("Enter the number of reps: "))
-            activity.set_sets(raw_input("Enter the number of sets: "))
         else:
-            print "Wrong selection! Try again"
+            print "Please enter d or the number of the activity! Try again"
 
     # now move all the selected ones into the selected activities
     selected_activities = move_selected_activities(activities)
-    print_activity_list(selected_activities)
     return selected_activities
 
 def get_next_location():
