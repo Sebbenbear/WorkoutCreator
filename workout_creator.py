@@ -17,11 +17,12 @@ class Activity:
             self.is_selected = True
 
 class MovingActivity(Activity):
-    def __init__(self, name):
-        self.name = name
 
     def set_distance(self, distance):
         self.distance = distance
+
+    def to_string(self):
+        return "%s (%dm)" % (self.name, self.distance)
 
 class OnSpotActivity(Activity):
     reps = 0
@@ -36,6 +37,9 @@ class OnSpotActivity(Activity):
 
     def set_rest(self, rest):
         self.rest = rest
+
+    def to_string(self):
+        return "%s (%d reps %d sets, %d secs rest)" % (self.name, self.reps, self.sets, self.rest)
 
 class WorkoutLocation:
 
@@ -59,6 +63,15 @@ class WorkoutLocation:
     def clone(self):
         return copy.deepcopy(self)
 
+    def on_spot_activities_to_string(self):
+        string = ""
+        for activity in self.on_spot_activities:
+            string = "%s %s\n" % (string, activity.to_string())
+        return string
+
+    def to_string(self):
+        return "%d %d %s %s" % (self.x, self.y, self.on_spot_activities_to_string(), self.moving_activity.to_string())
+
 ## FUNCTIONS
 
 def display_activities_for_input(activities):
@@ -79,13 +92,14 @@ def move_selected_activities(activities):
     return selected_activities
 
 def print_activity_list(activities):
+    index = 0
     for activity in activities:
-        print activity.name
+        print "%d %s" % (index, activity.name)
+        index = index + 1
 
 def select_moving_activity(activities):
     while True:
-        for index in xrange(len(activities)):
-            print '%d %s' % (index, activities[index].name)
+        print_activity_list(activities)
 
         result = raw_input("Select the number of the activity:")
 
@@ -104,26 +118,26 @@ def select_spot_activities(activities):
             break
         elif result >= 0 or result < len(activities):
             index = int(result)
-            activity = activities[index]  # this isn't
+            activity = activities[index]
+            if not activity.is_selected:
+                activity.set_reps(raw_input("Enter the number of reps: "))
+                activity.set_sets(raw_input("Enter the number of sets: "))
             activity.toggle_selected()
-            activity.set_reps(raw_input("Enter the number of reps: "))
-            activity.set_sets(raw_input("Enter the number of sets: "))
         else:
-            print "Wrong selection! Try again"
+            print "Please enter d or the number of the activity! Try again"
 
     # now move all the selected ones into the selected activities
     selected_activities = move_selected_activities(activities)
-    print_activity_list(selected_activities)
     return selected_activities
 
 def get_next_location():
     x, y = raw_input("Enter location coordinates in the following format 'x y':").split()
     return WorkoutLocation(int(x), int(y))
 
-def printOverview(stations):
+def print_overview(stations):
     ordered_stations_dict = OrderedDict(sorted(stations.items(), key=lambda t: t[0]))
 
-    print "=== Exercise Overview ==="
+    print "\n=== Exercise Overview ==="
     for i, (key, value) in enumerate(ordered_stations_dict.iteritems()):
         print 'Station %d (%d, %d):' % (key, value.x, value.y)
 
@@ -132,6 +146,52 @@ def printOverview(stations):
 
         if value.moving_activity != None:
             print '%s %10s (meters)' % (value.moving_activity.name, str(value.moving_activity.distance))
+
+# Use a default message if nothing is passed in.
+def print_selection_error(msg="That was an invalid selection. Please try again."):
+    print msg
+
+def print_workout_locations(locations):
+    print "\nList of locations:"
+    for key in locations:
+        print "%d : %s" % (key, locations[key].to_string())
+
+def delete_station(locations):
+    # print all the locations
+    print_workout_locations(locations)
+
+    while True:
+        result = raw_input("Select the number of the location to be deleted, (B) to go back:").lower()
+
+        if result == "b":
+            return locations
+        elif int(result) in locations:  #if the result is not in here
+            new_locations_dict = copy.deepcopy(locations)
+            del new_locations_dict[int(result)]
+            #need to reorder the keys here now
+            print "deleted the location, returning new one now"
+            return new_locations_dict
+        else:
+            print_selection_error("failed on delete station")
+
+
+def display_stations(stations):
+    print_overview(stations)
+
+    while True:
+        result = raw_input("Do you wish to (E)dit or (D)elete a station? (C) to cancel:").lower()
+        if result == "e":
+            # do editing
+            print "Not implemented yet..."
+            return stations
+        elif result == "d":
+            # delete the station
+            stations = delete_station(stations)
+            return stations
+        elif result == "c":
+            return stations
+        else:
+            print_selection_error("failed on display stations")
 
 def main():
     moving_activities = [MovingActivity("running"), MovingActivity("skipping"), MovingActivity("jumping")]
@@ -150,7 +210,7 @@ def main():
 
     while not done:
         print "You are at station %d" % (current_index)
-        action = raw_input("Select (M)ove, on the (S)pot, or (F)inished:").lower()
+        action = raw_input("Select (M)ove, on the (S)pot, (E)dit or (F)inished:").lower()
 
         if action == 'm':
             next_location = get_next_location()
@@ -176,13 +236,16 @@ def main():
             stations[last_index] = location.clone() #clone the last station
             done = True
 
+        elif action == 'e':
+            stations = display_stations(stations)
+
         else:
             #action is to remove the station
             print "%s wasn\'t a correct choice, please try again" % (action)
 
         last_action = action
 
-    printOverview(stations)
+    print_overview(stations)
 
 main()
 
