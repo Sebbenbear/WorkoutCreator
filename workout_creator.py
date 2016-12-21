@@ -41,6 +41,12 @@ class OnSpotActivity(Activity):
     def to_string(self):
         return "%s (%d reps %d sets, %d secs rest)" % (self.name, self.reps, self.sets, self.rest)
 
+# class RepActivity(OnSpotActivity):
+#     # prompts user for reps, sets
+#
+# class TimedActivity(OnSpotActivity):
+#     # prompts user for time (seconds)
+
 class WorkoutLocation:
 
     station = 1
@@ -168,7 +174,8 @@ def delete_station(locations):
         elif int(result) in locations:  #if the result is not in here
             new_locations_dict = copy.deepcopy(locations)
             del new_locations_dict[int(result)]
-            #need to reorder the keys here now
+
+            #TODO need to reorder the keys here now
             print "deleted the location, returning new one now"
             return new_locations_dict
         else:
@@ -193,60 +200,62 @@ def display_stations(stations):
         else:
             print_selection_error("failed on display stations")
 
-def main():
-    moving_activities = [MovingActivity("running"), MovingActivity("skipping"), MovingActivity("jumping")]
-    on_the_spot_activities = [OnSpotActivity("press ups"), OnSpotActivity("sit ups"), OnSpotActivity("crunches")]
+class WorkoutCreator:
 
-    # maintain a map of each workout location
-    current_index = 1  #remember which station it is
-    last_index = 1 #remember where to insert the next station
+    def __init__(self):
+        moving_activities = [MovingActivity("running"), MovingActivity("skipping"), MovingActivity("jumping")]
+        on_the_spot_activities = [OnSpotActivity("press ups"), OnSpotActivity("sit ups"), OnSpotActivity("crunches")]
 
-    stations = {} #operate with a standard dictionary, sort it later
-    done = False
+        # maintain a map of each workout location
+        current_index = 1  #remember which station it is
+        last_index = 1 #remember where to insert the next station
 
-    location = get_next_location()
-    previous_location = location  #reset the previous location
-    last_action = None
+        stations = {} #operate with a standard dictionary, sort it later
+        done = False
 
-    while not done:
-        print "You are at station %d" % (current_index)
-        action = raw_input("Select (M)ove, on the (S)pot, (E)dit or (F)inished:").lower()
+        location = get_next_location()
+        previous_location = location  #reset the previous location
+        last_action = None
 
-        if action == 'm':
-            next_location = get_next_location()
+        while not done:
+            print "You are at station %d" % (current_index)
+            action = raw_input("Select (M)ove, on the (S)pot, (E)dit or (F)inished:").lower()
 
-            activity = select_moving_activity(moving_activities)
-            distance = next_location.calculate_distance(location)
-            activity.set_distance(distance)
+            if action == 'm':
+                next_location = get_next_location()
 
-            location.set_moving_activity(activity)
+                activity = select_moving_activity(moving_activities)
+                distance = next_location.calculate_distance(location)
+                activity.set_distance(distance)
 
-            # clone a reference and insert it in the map, update
-            stations[last_index] = location.clone()
-            last_index = last_index + 1
+                location.set_moving_activity(activity)
 
-            previous_location = location  #update the target location
-            location = next_location
+                # clone a reference and insert it in the map, update
+                stations[last_index] = location.clone()
+                last_index = last_index + 1
 
-        elif action == 's' and last_action != 's':
-            activities = select_spot_activities(on_the_spot_activities)
-            location.set_on_spot_activities(activities)
+                previous_location = location  #update the target location
+                location = next_location
 
-        elif action == 'f':
-            stations[last_index] = location.clone() #clone the last station
-            done = True
+            elif action == 's' and last_action != 's':
+                activities = select_spot_activities(on_the_spot_activities)
+                location.set_on_spot_activities(activities)
 
-        elif action == 'e':
-            stations = display_stations(stations)
+            elif action == 'f':
+                stations[last_index] = location.clone() #clone the last station
+                done = True
 
-        else:
-            #action is to remove the station
-            print "%s wasn\'t a correct choice, please try again" % (action)
+            elif action == 'e':
+                stations = display_stations(stations)
 
-        last_action = action
+            else:
+                #action is to remove the station
+                print "%s wasn\'t a correct choice, please try again" % (action)
 
-    print_overview(stations)
+            last_action = action
 
-main()
+        print_overview(stations)
+
+#main()
 
 #done
